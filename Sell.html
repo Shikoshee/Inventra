@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Selling Page</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1, h2 { text-align: center; color: #333; }
+
+    .product-card {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    input, select { padding: 6px; margin: 5px 0; width: 100%; }
+
+    .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+    .btn-sell { background: #28a745; color: #fff; }
+    .btn-back { background: #007BFF; color: #fff; }
+
+    #debtorField, #wholesaleField {
+      display: none;
+      margin-top: 10px;
+      background: #fff3cd;
+      padding: 10px;
+      border: 1px solid #ffeeba;
+      border-radius: 6px;
+    }
+
+    .dashboard-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #007BFF;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 5px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .dashboard-btn:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+
+  <h1>Sell Products</h1>
+  <div id="sellContainer"></div>
+
+  <h2>Total Sale: Ksh <span id="grandTotal">0.00</span></h2>
+
+  <div style="background:#fff;padding:10px;border-radius:6px;margin-top:10px;">
+    <label>Amount Paid (Ksh):</label>
+    <input type="number" id="amountPaid" placeholder="Enter amount received">
+    <p><strong>Final Total:</strong> Ksh <span id="finalTotal">0.00</span></p>
+    <p><strong>Balance:</strong> Ksh <span id="balance">0.00</span></p>
+  </div>
+
+  <label for="saleType">Sale Type:</label>
+  <select id="saleType" onchange="toggleWholesaleField()">
+    <option value="Retail">Retail</option>
+    <option value="Wholesale">Wholesale</option>
+  </select>
+
+  <div id="wholesaleField">
+    <label for="wholesaleShop">Wholesale Shop Name:</label>
+    <input type="text" id="wholesaleShop" placeholder="Enter shop name">
+  </div>
+
+  <label for="payment">Mode of Payment:</label>
+  <select id="payment" onchange="toggleDebtField()">
+    <option value="Cash">Cash</option>
+    <option value="Card">Card</option>
+    <option value="Mpesa">Mpesa</option>
+    <option value="Debt">Debt</option>
+  </select>
+
+  <div id="debtorField">
+    <label for="debtorName">Debtor’s Name:</label>
+    <input type="text" id="debtorName" placeholder="Enter debtor’s name">
+  </div>
+
+  <button class="btn btn-sell" onclick="handleConfirmSale()">Confirm Sale</button>
+  <button class="btn btn-sell" onclick="confirmAndPrintSale()">✅ Confirm & Print Receipt</button>
+  <button class="btn btn-back" onclick="goBack()">Back to Stock</button>
+
+  <script>
+    // ===== Load products and selected indices =====
+    let products = JSON.parse(localStorage.getItem("products")) || [];
+    let sellIndices = JSON.parse(localStorage.getItem("sellIndices")) || [];
+
+    if (!sellIndices.length) {
+      alert("No products selected!");
+      window.location.href = "Stock.html";
+    }
+
+    const container = document.getElementById("sellContainer");
+
+    sellIndices.forEach(i => {
+      let p = products[i];
+      let card = document.createElement("div");
+      card.className = "product-card";
+      card.innerHTML = `
+        <p><strong>Product:</strong> ${p.productName}</p>
+        <p><strong>Available:</strong> ${p.quantity}</p>
+        <p><strong>Retail Price:</strong> Ksh ${p.retailPrice}</p>
+        <p><strong>Wholesale Price:</strong> Ksh ${p.wholesalePrice ?? 'N/A'}</p>
+        <label>Quantity to Sell:</label>
+        <input type="number" min="0" max="${p.quantity}" value="0"
+              data-index="${i}" data-retail="${p.retailPrice}" data-wholesale="${p.wholesalePrice}" class="qtyInput">
+        <p>Total: Ksh <span class="lineTotal">0.00</span></p>
+        <label>Discount per item (Ksh):</label>
+        <input type="number" min="0" value="0" class="discountInput" data-index="${i}">
+      `;
+      container.appendChild(card);
+    });
+
+    // ===== Update totals =====
+    function updateTotals() {
+      let grand = 0;
+      const saleType = document.getElementById("saleType").value;
+
+      document.querySelectorAll(".qtyInput").forEach((input, idx) => {
+        let qty = parseInt(input.value) || 0;
+        let price = saleType === "Wholesale"
+          ? parseFloat(input.dataset.wholesale || input.dataset.retail)
+          : parseFloat(input.dataset.retail);
+
+        let discountInput = document.querySelectorAll(".discountInput")[idx];
+        let discount = parseFloat(discountInput.value) || 0;
+
+        let lineTotal = qty * price - discount;
+        if (lineTotal < 0) lineTotal = 0;
+
+        input.closest(".product-card").querySelector(".lineTotal").innerText = lineTotal.toFixed(2);
+        grand += lineTotal;
+      });
+
+      document.getElementById("grandTotal").innerText = grand.toFixed(2);
+
+      const amountPaid = parseFloat(document.getElementById("amountPaid").value) || 0;
+      document.getElementById("finalTotal").innerText = grand.toFixed(2);
+      document.getElementById("balance").innerText = (grand - amountPaid).toFixed(2);
+    }
+
+    document.addEventListener("input", e => {
+      if (e.target.classList.contains("qtyInput") || e.target.classList.contains("discountInput")) updateTotals();
+    });
+    document.getElementById("amountPaid").addEventListener("input", updateTotals);
+    document.getElementById("saleType").addEventListener("change", updateTotals);
+
+    // ===== Toggle debtor field =====
+    function toggleDebtField() {
+      const payment = document.getElementById("payment").value;
+      const debtorField = document.getElementById("debtorField");
+      debtorField.style.display = payment === "Debt" ? "block" : "none";
+      if (payment !== "Debt") document.getElementById("debtorName").value = "";
+    }
+
+    // ===== Toggle wholesale field =====
+    function toggleWholesaleField() {
+      const saleType = document.getElementById("saleType").value;
+      const field = document.getElementById("wholesaleField");
+      field.style.display = saleType === "Wholesale" ? "block" : "none";
+      if (saleType !== "Wholesale") document.getElementById("wholesaleShop").value = "";
+    }
+
+    // ===== Make sale =====
+    function makeSale() {
+      let updated = false;
+      let saleDetails = [];
+
+      const paymentMode = document.getElementById("payment").value;
+      const amountPaid = parseFloat(document.getElementById("amountPaid").value) || 0;
+      const totalSale = parseFloat(document.getElementById("finalTotal").innerText) || 0;
+
+      const balance = totalSale - amountPaid;
+      const debtorName = document.getElementById("debtorName").value.trim();
+      const saleType = document.getElementById("saleType").value;
+      const wholesaleShop = document.getElementById("wholesaleShop").value.trim();
+
+      if (balance > 0 && debtorName === "") {
+        alert("Please enter debtor's name because the sale has a balance.");
+        document.getElementById("debtorField").style.display = "block";
+        return;
+      }
+
+      if (saleType === "Wholesale" && wholesaleShop === "") {
+        alert("Please enter wholesale shop name.");
+        return;
+      }
+
+      document.querySelectorAll(".qtyInput").forEach((input, idx) => {
+        let qty = parseInt(input.value) || 0;
+        let index = parseInt(input.dataset.index);
+
+        if (qty > 0) {
+          if (qty > products[index].quantity) {
+            alert("Not enough stock for " + products[index].productName);
+            return;
+          }
+
+          let price = saleType === "Wholesale"
+            ? parseFloat(products[index].wholesalePrice)
+            : parseFloat(products[index].retailPrice);
+
+          let discountInput = document.querySelectorAll(".discountInput")[idx];
+          let itemDiscount = parseFloat(discountInput.value) || 0;
+
+          let finalItemTotal = qty * price - itemDiscount;
+          if (finalItemTotal < 0) finalItemTotal = 0;
+
+          saleDetails.push({
+            product: products[index].productName,
+            price: price,
+            qty: qty,
+            total: finalItemTotal,
+            discount: itemDiscount,
+            //date: new Date().toLocaleString(),
+            date: new Date().toISOString(),
+            payment: paymentMode,
+            isPartial: balance > 0,
+            debtor: balance > 0 ? debtorName : "",
+            saleType: saleType,
+            shopName: saleType === "Wholesale" ? wholesaleShop : "",
+            status: balance > 0 ? "UNPAID" : "PAID",
+            amountPaid: 0, // optional (we're focusing on debt only)
+
+balance: paymentMode === "Debt"
+  ? finalItemTotal   // FULL item becomes debt
+  : Math.max(finalItemTotal - (amountPaid * (finalItemTotal / totalSale)), 0)
+            //amountPaid: amountPaid,
+            //balance: balance 
+        
+          });
+
+          products[index].quantity -= qty;
+          updated = true;
+        }
+      });
+
+      if (!updated) {
+        alert("No products sold!");
+        return;
+      }
+
+      localStorage.setItem("products", JSON.stringify(products));
+
+      let allSales = JSON.parse(localStorage.getItem("allSales")) || [];
+      allSales = allSales.concat(saleDetails);
+      localStorage.setItem("allSales", JSON.stringify(allSales));
+
+      return {
+        success: true,
+        saleDetails, totalSale, amountPaid, balance, debtorName, saleType, wholesaleShop
+      };
+    }
+
+    // ===== Go back =====
+    function goBack() {
+      const userData = JSON.parse(localStorage.getItem("loggedInUser"));
+      if (userData && userData.role === "User") window.location.href = "user_stock.html";
+      else if (userData && userData.role === "Admin") window.location.href = "Stock.html";
+      else {
+        alert("Session expired. Please log in again.");
+        window.location.href = "Home Stock.html";
+      }
+    }
+
+    // ===== Confirm sale & alert =====
+    function handleConfirmSale() {
+      const result = makeSale();
+      if (!result || !result.success) return;
+      alert("✅ Sale completed successfully!");
+      window.location.href = "sales_report.html";
+    }
+
+    // ===== Confirm sale & print receipt =====
+    function confirmAndPrintSale() {
+      const result = makeSale();
+      if (!result || !result.success) return;
+
+      const { saleDetails, totalSale, amountPaid, balance, debtorName, saleType, wholesaleShop } = result;
+
+      let receiptHTML = `
+        <h2 style="text-align:center;">🧾 Sales Receipt</h2>
+        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+        <p><strong>Sale Type:</strong> ${saleType}</p>
+        ${saleType === "Wholesale" ? `<p><strong>Shop:</strong> ${wholesaleShop}</p>` : ""}
+        <table style="width:100%;border-collapse:collapse;">
+          <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+          ${saleDetails.map(item => `
+            <tr>
+              <td>${item.product}</td>
+              <td>${item.qty}</td>
+              <td>${item.price}</td>
+              <td>${item.total}</td>
+            </tr>`).join("")}
+        </table>
+        <p><strong>Total:</strong> Ksh ${totalSale.toFixed(2)}</p>
+        <p><strong>Amount Paid:</strong> Ksh ${amountPaid.toFixed(2)}</p>
+        <p><strong>Balance:</strong> Ksh ${balance.toFixed(2)}</p>
+        ${balance > 0 ? `<p><strong>Debtor:</strong> ${debtorName}</p>` : ""}
+        <p style="text-align:center;">Thank you 🙏</p>
+      `;
+
+      const printWindow = window.open("", "", "width=300,height=600");
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Receipt</title>
+            <style>
+              body { font-family: monospace; padding: 10px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; }
+              th, td { border: 1px solid black; padding: 4px; }
+            </style>
+          </head>
+          <body>${receiptHTML}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+      window.location.href = "sales_report.html";
+    }
+  </script>
+
+</body>
+</html>

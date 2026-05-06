@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventra - Admin Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #eef2f7; }
+    h1 { text-align: center; color: #007BFF; }
+    .menu { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
+    .card {
+      background: #fff; width: 200px; margin: 15px; padding: 20px;
+      text-align: center; border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1); transition: 0.3s;
+    }
+    .card:hover { transform: translateY(-5px); }
+    a { text-decoration: none; color: #007BFF; font-weight: bold; }
+    .logout { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Inventra - Admin Dashboard</h1>
+  
+  <div class="menu">
+  <div class="card"><a href="Stock.html">📦 Manage Stock</a></div>
+    <div class="card"><a href="debts.html">💰 Debts Sale</a></div>
+    <div class="card"><a href="sales_report.html">📊 Sales Report</a></div>
+    <div class="card"><a href="manage_user.html">👥 Manage Users</a></div>
+  <div class="card"><a href="Home Stock.html">🚪 Logout</a></div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (!user || user.role !== 'Admin') {
+      alert("Unauthorized access! Redirecting to login...");
+      window.location.href = "Home Stock.html";
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('loggedInUser');
+      alert("You have been logged out.");
+      window.location.href = "Home Stock.html";
+    });
+  </script>
+</body>
+</html>

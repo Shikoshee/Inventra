@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="UTF-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <title>Sales Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { text-align: center; color: #007BFF; }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc; text-align: center; padding: 8px;
+    }
+    th { background: #007BFF; color: white; }
+    button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-pay {
+      background: #28a745;
+      color: #fff;
+    }
+    .btn-pay:hover { background: #218838; }
+    .btn-back {
+      display: block; width: 200px; margin: 20px auto;
+      padding: 10px; text-align: center;
+      background: #007BFF; color: #fff; text-decoration: none; border-radius: 5px;
+    }
+    .btn-back:hover { background: #0056b3; }
+    .totals {
+      margin-top: 30px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .totals h2 {
+      color: #007BFF;
+      margin-bottom: 10px;
+    }
+    .totals p {
+      font-size: 1.1rem;
+      color: #333;
+      margin: 5px 0;
+    }
+    .btn-backup {
+  background-color: #28a745;
+  color: white;
+}
+.btn-backup:hover {
+  background-color: #218838;
+}
+
+.btn-restore {
+  background-color: #ffc107;
+  color: black;
+}
+.btn-restore:hover {
+  background-color: #e0a800;
+}
+.dashboard-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #007BFF;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 5px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+.dashboard-btn:hover {
+  background: #0056b3;
+}
+
+  </style>
+</head>
+<body>
+  <a href="#" class="dashboard-btn" onclick="openAdminDashboard(event)">🏠 Dashboard</a>
+
+  <h1>Sales Report</h1>
+  
+  <div class="btn-container" style="text-align:center;">
+    <button class="btn-backup" onclick="backupData()">🧾 Backup Data</button>
+    <button class="btn-restore" onclick="document.getElementById('restoreFile').click()">🔁 Restore Data</button>
+    <button class="btn-backup" onclick="downloadPDF()">📄 Download PDF</button>
+    <button class="btn btn-delete" onclick="resetSystem()">⚠️ Reset System</button>
+
+    <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreData(event)">
+  </div>
+
+  <div id="reportContainer"></div>
+  <div class="totals" id="totalsContainer"></div>
+
+  <a href="Stock.html" class="btn-back">⬅ Back to Stock</a>
+
+  <script>
+    function downloadPDF() {
+  // Combine the report and totals
+  const element = document.createElement("div");
+  element.innerHTML = `
+    <h1 style="text-align:center;color:#007BFF;">Sales Report</h1>
+    ${document.getElementById("reportContainer").innerHTML}
+    ${document.getElementById("totalsContainer").innerHTML}
+  `;
+
+  const opt = {
+    margin:       0.5,
+    filename:     `Sales_Report_${new Date().toISOString().split("T")[0]}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(element).save();
+}
+    let allSales = JSON.parse(localStorage.getItem("allSales")) || [];
+allSales.reverse();    
+
+    if (!allSales.length) {
+      document.getElementById("reportContainer").innerHTML = "<p>No sales data available.</p>";
+    } else {
+      renderTable();
+      updateTotals();
+    }
+
+    // 🧾 Render sales table
+    function renderTable() {
+      let reportHTML = `
+        <table>
+          <tr>
+            <th>Product</th>
+            <th>Price Each</th>
+            <th>Quantity</th>
+            <th>Total</th>
+            <th>Balance</th>
+            <th>Sale Type</th>
+            <th>Shop Name</th>
+            <th>Sale Date</th>
+            <th>Payment</th>
+            <th>Debtor Name</th>
+            <th>Status</th>
+            <th>Cleared Date</th>
+            <th>Action</th>
+          </tr>
+      `;
+
+      allSales.forEach((s, index) => {
+        let isDebt = s.debtor || (parseFloat(s.balance) || 0) > 0;
+       // let status = s.status || s.debtStatus || (isDebt ? "UNPAID" : "PAID");
+        let status = s.status ? s.status : ((parseFloat(s.balance) || 0) > 0 ? "UNPAID" : "PAID");
+       // let status = s.status || (isDebt ? "UNPAID" : "PAID");
+        let clearedDate = s.clearedDate || "-";
+        let saleType = s.saleType || "Retail";
+        let shopName = (saleType === "Wholesale") ? (s.shopName || "N/A") : "-";
+
+        reportHTML += `
+          <tr>
+            <td>${s.product}</td>
+            <td>Ksh ${s.price}</td>
+            <td>${s.qty}</td>
+            <td>Ksh ${(parseFloat(s.total) || 0).toFixed(2)}</td>
+            <td>Ksh ${s.balance ? s.balance.toFixed(2) : "0.00"}</td>
+            <td>${saleType}</td>
+            <td>${shopName}</td>
+            <td>${new Date(s.date).toLocaleString()}</td>
+            <td>${s.payment}</td>
+            <td>${isDebt ? (s.debtor || "N/A") : "-"}</td>
+            <td>${status}</td>
+            <td>${clearedDate}</td>
+            <td>${
+              isDebt && status === "UNPAID"
+                ? `<button class="btn-pay" onclick="markAsPaid(${index})">Mark as PAID</button>`
+                : "-"
+            }</td>
+          </tr>
+        `;
+      });
+
+      reportHTML += `</table>`;
+      document.getElementById("reportContainer").innerHTML = reportHTML;
+    }
+
+    // ✅ Mark debt as paid (local only)
+  function markAsPaid(index) {
+
+  if (!confirm("Mark this debt as paid?")) return;
+
+  const now = new Date();
+  const sale = allSales[index];
+
+  if (!sale) return;
+
+  const balancePaid = sale.balance || 0;
+
+  sale.status = "PAID";
+  sale.balance = 0;
+
+  sale.clearedAmount = balancePaid;
+
+  sale.amountPaid = (parseFloat(sale.amountPaid) || 0) + balancePaid;
+
+  sale.clearedDate = now.toLocaleString();
+  sale.paidDate = now.toISOString().split("T")[0];
+
+  localStorage.setItem("allSales", JSON.stringify(allSales));
+
+  alert("✅ Debt cleared successfully!");
+
+  renderTable();
+  updateTotals();
+}
+
+
+
+// ✅ Totals Calculation (fully fixed)
+// ✅ Totals Calculation (fully fixed)
+function updateTotals() {
+
+  let totalSales = 0;
+  let totalPaid = 0;
+  let totalOutstanding = 0;
+
+  let dailySummary = {};
+
+  allSales.forEach(s => {
+
+    const saleDate = parseDateSafely(s.date);
+    if (isNaN(saleDate)) return;
+
+    const dayKey = saleDate.toISOString().split("T")[0];
+
+    const total = parseFloat(s.total) || 0;
+    const paid = parseFloat(s.amountPaid) || 0;
+    const balance = parseFloat(s.balance) || 0;
+
+    totalSales += total;
+    totalPaid += paid;
+    totalOutstanding += balance;
+
+    if (!dailySummary[dayKey]) {
+    
+    dailySummary[dayKey] = {
+  sales: 0,
+  debt: 0,
+  cash: 0,
+  mpesa: 0,
+  debtPaid: 0
+};
+}
+
+    dailySummary[dayKey].sales += total;
+    dailySummary[dayKey].debt += balance;
+
+// 💰 Payment breakdown
+// 💰 Payment breakdown (works for FULL + PARTIAL)
+if (s.payment === "Cash") {
+  dailySummary[dayKey].cash += paid;
+} 
+else if (s.payment === "Mpesa") {
+  dailySummary[dayKey].mpesa += paid;
+}
+
+
+
+// 💳 Debt paid tracking (when cleared)
+if (s.status === "PAID" && s.clearedDate) {
+  const clearedDate = parseDateSafely(s.clearedDate);
+  if (!isNaN(clearedDate)) {
+    const paidDay = clearedDate.toISOString().split("T")[0];
+
+    if (!dailySummary[paidDay]) {
+      dailySummary[paidDay] = {
+        sales: 0,
+        debt: 0,
+        cash: 0,
+        mpesa: 0,
+        debtPaid: 0
+      };
+    }
+
+    dailySummary[paidDay].debtPaid += (parseFloat(s.clearedAmount) || 0);
+  }
+}
+
+  });
+
+  // 🔄 DAILY SUMMARY FIRST
+  // 🔄 DAILY SUMMARY FIRST (most recent date first)
+let totalsHTML = `<h3>📅 Daily Summary</h3>`;
+
+Object.keys(dailySummary)
+  .sort((a, b) => new Date(b) - new Date(a)) // 🔹 descending
+  .forEach(d => {
+    const day = dailySummary[d];
+    totalsHTML += `
+    <p>
+    <b>${d}</b><br>
+    Total Sales: Ksh ${day.sales.toFixed(2)} |
+Cash: Ksh ${day.cash.toFixed(2)} |
+Mpesa: Ksh ${day.mpesa.toFixed(2)} |
+Debt Created: Ksh ${day.debt.toFixed(2)} |
+Debt Paid: Ksh ${day.debtPaid.toFixed(2)}
+    </p>
+    `;
+  });
+
+// 🔄 THEN OVERALL SALES SUMMARY
+totalsHTML += `
+<hr>
+<h2>📊 Sales Summary</h2>
+<p><b>Total Sales:</b> Ksh ${totalSales.toFixed(2)}</p>
+
+<p><b>Total Paid:</b> Ksh ${totalPaid.toFixed(2)}</p>
+<p><b>Total Outstanding Debt:</b> Ksh ${totalOutstanding.toFixed(2)}</p>
+`;
+
+document.getElementById("totalsContainer").innerHTML = totalsHTML;
+}
+// 🧭 Robust date parser
+// 🧭 Safer date parser (forces DD/MM/YYYY support)
+function parseDateSafely(dateStr) {
+  if (!dateStr) return new Date(NaN);
+  if (dateStr instanceof Date) return dateStr;
+
+  // If ISO string
+  let d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+
+  // Try numeric timestamp
+  if (!isNaN(Number(dateStr))) {
+    d = new Date(Number(dateStr));
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // Try custom DD/MM/YYYY or YYYY-MM-DD
+  if (typeof dateStr === "string") {
+    const clean = dateStr.split(",")[0].trim();
+
+    // Detect DD/MM/YYYY (commonly used in Kenya)
+    const parts = clean.split(/[\/\-\.]/).map(p => p.trim());
+    if (parts.length === 3) {
+      let dd, mm, yyyy;
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        yyyy = +parts[0];
+        mm = +parts[1];
+        dd = +parts[2];
+      } else {
+        // DD/MM/YYYY
+        dd = +parts[0];
+        mm = +parts[1];
+        yyyy = +parts[2];
+      }
+      const fixed = new Date(yyyy, mm - 1, dd);
+      if (!isNaN(fixed.getTime())) return fixed;
+    }
+  }
+
+  return new Date(NaN);
+}
+
+
+    // 💾 BACKUP DATA
+    function backupData() {
+      const data = localStorage.getItem("allSales");
+      if (!data) return alert("No data to back up.");
+
+      const blob = new Blob([data], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `sales_backup_${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+    }
+
+    // 🔁 RESTORE DATA
+    function restoreData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const restored = JSON.parse(e.target.result);
+          if (Array.isArray(restored)) {
+            localStorage.setItem("allSales", JSON.stringify(restored));
+            allSales = restored;
+            renderTable();
+            updateTotals();
+            alert("✅ Data restored successfully!");
+          } else {
+            alert("❌ Invalid file format.");
+          }
+        } catch {
+          alert("❌ Error reading file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+    // ✅ Dynamic Back Button Redirect based on logged-in user's role
+document.addEventListener("DOMContentLoaded", () => {
+  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  const backBtn = document.querySelector(".btn-back");
+
+  if (loggedInUser && backBtn) {
+    if (loggedInUser.role === "Admin") {
+      backBtn.href = "Stock.html";
+    } else if (loggedInUser.role === "User") {
+      backBtn.href = "user_stock.html";
+    }
+  }
+});
+
+function openAdminDashboard(e) {
+  e.preventDefault();
+  window.location.href = "admin_dashboard.html";
+}
+
+function resetSystem() {
+
+  const confirmReset = confirm("⚠️ This will delete ALL data (products, sales, records).\nAre you sure?");
+
+  if (!confirmReset) return;
+
+  const finalConfirm = prompt("Type DELETE to confirm full system reset:");
+
+  if (finalConfirm !== "DELETE") {
+    alert("❌ Reset cancelled.");
+    return;
+  }
+
+  // Clear only your system data
+  localStorage.removeItem("products");
+  localStorage.removeItem("allSales");
+  localStorage.removeItem("sellIndices");
+
+  // Optional: clear user session
+  localStorage.removeItem("loggedInUser");
+
+  alert("✅ System reset successful!");
+
+  // Reload page
+  window.location.href = "Home Stock.html"; // or login page
+}
+  </script>
+</body>
+</html>
