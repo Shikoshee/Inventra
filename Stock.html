@@ -100,6 +100,9 @@
       margin-right: 8px;
       font-weight: bold;
     }
+    .hidden {
+  display: none;
+}
   </style>
 </head>
 <body>
@@ -115,23 +118,29 @@
     <button class="btn btn-edit" onclick="document.getElementById('restoreFile').click()">🔁 Restore Products</button>
     <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreProducts(event)">
   </div>
-
   <!-- Form to add products -->
-  <div class="form-container">
-    <input type="text" id="productName" placeholder="Product Name">
-    <input type="number" id="buyingPrice" placeholder="Buying Price">
-    <input type="number" id="wholesalePrice" placeholder="Wholesale Price">
-    <input type="number" id="retailPrice" placeholder="Retail Price">
-    <input type="text" id="weight" placeholder="Weight">
-    <input type="text" id="company" placeholder="Company">
-    <input type="text" id="category" placeholder="Category">
-    <input type="text" id="details" placeholder="Details">
-    <input type="number" id="quantity" placeholder="Quantity">
-    <input type="date" id="expiryDate" placeholder="Expiry Date">
+   <!-- Add Product Button -->
+<div class="btn-container">
+  <button class="btn btn-add" onclick="toggleForm()">➕ Add Product</button>
+</div>
 
-    <button class="btn btn-add" onclick="addProduct()">Add Product</button>
-  </div>
+<!-- Hidden Form -->
+<div id="formContainer" class="form-container hidden">
 
+  <input type="text" id="productName" placeholder="Product Name">
+  <input type="number" id="buyingPrice" placeholder="Buying Price">
+  <input type="number" id="wholesalePrice" placeholder="Wholesale Price">
+  <input type="number" id="retailPrice" placeholder="Retail Price">
+  <input type="text" id="weight" placeholder="Weight">
+  <input type="text" id="company" placeholder="Company">
+  <input type="text" id="category" placeholder="Category">
+  <input type="text" id="details" placeholder="Details">
+  <input type="number" id="quantity" placeholder="Quantity">
+  <input type="date" id="expiryDate">
+
+  <button class="btn btn-add" onclick="addProduct()">Add Product</button>
+
+</div>
   <!-- Search + Sort -->
   <div class="top-bar">
     <div class="search-bar">
@@ -322,6 +331,10 @@
     function openAdminDashboard(e) {
   e.preventDefault();
   window.location.href = "admin_dashboard.html";
+}
+function toggleForm() {
+  const form = document.getElementById("formContainer");
+  form.classList.toggle("hidden");
 }
 
   </script>
