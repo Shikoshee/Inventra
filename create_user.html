@@ -4,111 +4,220 @@
   <meta charset="UTF-8">
   <title>Create User (Admin Only) - Inventra</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      background: #f9f9f9; 
-      margin: 20px; 
-    }
-    .container { 
-      max-width: 400px; 
-      margin: auto; 
-      background: #fff; 
-      padding: 20px;
-      border-radius: 8px; 
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
-    }
-    h2 { 
-      text-align: center; 
-      color: #007BFF; 
-    }
-    .form-group { 
-      margin: 15px 0; 
-    }
-    label { 
-      font-weight: bold; 
-      display: block; 
-      margin-bottom: 5px; 
-    }
-    input, select { 
-      width: 100%; 
-      padding: 10px; 
-      border-radius: 5px; 
-      border: 1px solid #ccc; 
-    }
-    .btn { 
-      margin-top: 20px; 
-      padding: 10px 15px; 
-      background: #007BFF; 
-      color: #fff; 
-      border: none;
-      border-radius: 5px; 
-      cursor: pointer; 
-      width: 100%; 
-    }
-    .btn:hover { 
-      background: #0056b3; 
-    }
-    .msg { 
-      margin-top: 15px; 
-      text-align: center; 
-      font-weight: bold; 
-      color: #333; 
-    }
-    .error { 
-      color: red; 
-      font-size: 0.9em; 
-    }
-     /* ✅ User table styling */
-    .user-list {
-      max-width: 700px;
-      margin: 30px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
-    th {
-      background: #007BFF;
-      color: #fff;
-    }
-    .action-btn {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #fff;
-    }
-    .edit-btn {
-      background: #28a745;
-    }
-    .delete-btn {
-      background: #dc3545;
-    }
-    .dashboard-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: #007BFF;
-  color: #fff;
-  padding: 10px 18px;
-  border-radius: 5px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: background 0.3s;
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
-.dashboard-btn:hover {
-  background: #0056b3;
+
+body{
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  background:linear-gradient(135deg,#eef2ff,#dbeafe);
+  min-height:100vh;
+  padding:30px 15px;
+  color:#333;
 }
-  </style>
+
+/* Dashboard Button */
+.dashboard-btn{
+  position:fixed;
+  top:20px;
+  left:20px;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:#fff;
+  padding:12px 20px;
+  border-radius:12px;
+  font-weight:600;
+  text-decoration:none;
+  box-shadow:0 4px 10px rgba(0,0,0,0.15);
+  transition:0.3s;
+  z-index:1000;
+}
+
+.dashboard-btn:hover{
+  transform:translateY(-2px);
+  background:linear-gradient(135deg,#1d4ed8,#1e40af);
+}
+
+/* Main Containers */
+.container,
+.user-list{
+  background:#fff;
+  border-radius:20px;
+  padding:30px;
+  box-shadow:0 8px 25px rgba(0,0,0,0.08);
+  margin:auto;
+  margin-bottom:25px;
+}
+
+.container{
+  max-width:450px;
+}
+
+.user-list{
+  max-width:900px;
+}
+
+/* Headings */
+h2{
+  text-align:center;
+  margin-bottom:25px;
+  color:#1e3a8a;
+  font-size:28px;
+}
+
+/* Form */
+.form-group{
+  margin-bottom:20px;
+}
+
+label{
+  display:block;
+  margin-bottom:8px;
+  font-weight:600;
+  color:#374151;
+}
+
+input,
+select{
+  width:100%;
+  padding:14px;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  font-size:15px;
+  transition:0.3s;
+  background:#f9fafb;
+}
+
+input:focus,
+select:focus{
+  border-color:#2563eb;
+  outline:none;
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(37,99,235,0.15);
+}
+
+/* Buttons */
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 15px rgba(37,99,235,0.3);
+}
+
+/* Messages */
+.msg{
+  margin-bottom:20px;
+  text-align:center;
+  font-weight:bold;
+  font-size:15px;
+}
+
+.error{
+  color:#dc2626;
+  font-size:14px;
+  margin-top:5px;
+  display:block;
+}
+
+/* Table */
+table{
+  width:100%;
+  border-collapse:collapse;
+  overflow:hidden;
+  border-radius:12px;
+}
+
+th{
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:#fff;
+  padding:15px;
+  text-align:left;
+  font-size:15px;
+}
+
+td{
+  padding:14px;
+  border-bottom:1px solid #e5e7eb;
+  background:#fff;
+}
+
+tr:hover td{
+  background:#f8fafc;
+}
+
+/* Action Buttons */
+.action-btn{
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
+  margin-right:5px;
+  transition:0.3s;
+}
+
+.edit-btn{
+  background:#16a34a;
+}
+
+.edit-btn:hover{
+  background:#15803d;
+}
+
+.delete-btn{
+  background:#dc2626;
+}
+
+.delete-btn:hover{
+  background:#b91c1c;
+}
+
+/* Mobile Responsive */
+@media(max-width:768px){
+
+  body{
+    padding:20px 10px;
+  }
+
+  .container,
+  .user-list{
+    padding:20px;
+  }
+
+  h2{
+    font-size:22px;
+  }
+
+  table{
+    font-size:14px;
+  }
+
+  th,td{
+    padding:10px;
+  }
+
+  .dashboard-btn{
+    padding:10px 16px;
+    font-size:14px;
+  }
+
+}
+
+</style>
 </head>
 <body>
   <a href="#" class="dashboard-btn" onclick="openAdminDashboard(event)">🏠 Dashboard</a>
@@ -166,7 +275,7 @@
 <script>
   // ✅ Ensure only admins can access this page
   const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
-if (!currentUser || User.role !== 'Admin') {
+if (!currentUser || currentUser.role !== 'Admin') {
   alert('❌ Unauthorized access! Only Admins can create users.');
   window.location.href = 'Home Stock.html';
 }
