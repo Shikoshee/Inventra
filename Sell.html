@@ -709,72 +709,113 @@ function makeSale(){
 
   let saleDetails = [];
 
-  document.querySelectorAll(".product-card")
-  .forEach(card => {
+  let remainingPayment = amountPaid;
 
-    const qtyInput = card.querySelector(".qtyInput");
-    const discountInput = card.querySelector(".discountInput");
+const receiptNo = "RCPT-" + Date.now();
 
-    const qty = parseInt(qtyInput.value) || 0;
+document.querySelectorAll(".product-card")
+.forEach(card => {
 
-    if(qty <= 0) return;
+  const qtyInput = card.querySelector(".qtyInput");
+  const discountInput = card.querySelector(".discountInput");
 
-    const index = parseInt(qtyInput.dataset.index);
+  const qty = parseInt(qtyInput.value) || 0;
 
-    const product = products[index];
+  if(qty <= 0) return;
 
-    if(qty > product.quantity){
-      alert(`Insufficient stock for ${product.productName}`);
-      return;
+  const index = parseInt(qtyInput.dataset.index);
+
+  const product = products[index];
+
+  if(qty > product.quantity){
+
+    alert(`Insufficient stock for ${product.productName}`);
+
+    return;
+
+  }
+
+  const price =
+    saleType === "Wholesale"
+    ? parseFloat(product.wholesalePrice || product.retailPrice)
+    : parseFloat(product.retailPrice);
+
+  const discount =
+    parseFloat(discountInput.value) || 0;
+
+  const total = (qty * price) - discount;
+
+  // Reduce stock
+  product.quantity -= qty;
+
+  // -----------------------------
+  // DISTRIBUTE PAYMENT
+  // -----------------------------
+
+  let paidForThisItem = 0;
+  let balanceForThisItem = total;
+
+  if(remainingPayment > 0){
+
+    if(remainingPayment >= total){
+
+      // Fully paid
+      paidForThisItem = total;
+      balanceForThisItem = 0;
+
+      remainingPayment -= total;
+
+    } else {
+
+      // Partial payment
+      paidForThisItem = remainingPayment;
+      balanceForThisItem = total - remainingPayment;
+
+      remainingPayment = 0;
+
     }
 
-    const price =
-      saleType === "Wholesale"
-      ? parseFloat(product.wholesalePrice || product.retailPrice)
-      : parseFloat(product.retailPrice);
+  }
 
-    const discount =
-      parseFloat(discountInput.value) || 0;
+  saleDetails.push({
 
-    const total = (qty * price) - discount;
+    receiptNo: receiptNo,
 
-    product.quantity -= qty;
+    product: product.productName,
 
-    saleDetails.push({
+    customer: customerName,
 
-      receiptNo: "RCPT-" + Date.now(),
+    qty: qty,
 
-      product: product.productName,
+    price: price,
 
-      customer: customerName,
+    discount: discount,
 
-      qty: qty,
+    total: total,
 
-      price: price,
+    payment: paymentMode,
 
-      discount: discount,
+    amountPaid: paidForThisItem,
 
-      total: total,
+    balance: balanceForThisItem,
 
-      payment: paymentMode,
+    debtor: balanceForThisItem > 0
+      ? debtorName
+      : "",
 
-      amountPaid: amountPaid,
+    saleType: saleType,
 
-      balance: balance > 0 ? balance : 0,
+    shopName: wholesaleShop,
 
-      debtor: balance > 0 ? debtorName : "",
+    status: balanceForThisItem <= 0
+      ? "PAID"
+      : "PARTIAL",
 
-      saleType: saleType,
-
-      shopName: wholesaleShop,
-
-      status: balance > 0 ? "PARTIAL" : "PAID",
-
-      date: new Date().toISOString()
-
-    });
+    date: new Date().toISOString()
 
   });
+
+});
 
   localStorage.setItem("products", JSON.stringify(products));
 
