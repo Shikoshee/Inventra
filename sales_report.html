@@ -606,6 +606,12 @@ function markAsPaid(index){
 
   allSales[index].balance = 0;
 
+  // ✅ Update date to current date/time
+  allSales[index].date = new Date().toISOString();
+
+  // ✅ Save cleared date separately
+  allSales[index].clearedDate = new Date().toISOString();
+
   localStorage.setItem(
     "allSales",
     JSON.stringify(allSales)
@@ -618,7 +624,6 @@ function markAsPaid(index){
   alert("✅ Debt cleared successfully!");
 
 }
-
 function downloadPDF(){
 
   const element = document.body;
