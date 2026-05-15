@@ -439,7 +439,15 @@
 
           <td>${d.debtor || "N/A"}</td>
 
-          <td>${d.date}</td>
+          <td>
+  ${
+    new Date(d.date).toLocaleDateString()
+  }
+  &nbsp;&nbsp;
+  ${
+    new Date(d.date).toLocaleTimeString()
+  }
+</td>
 
           <td>
             ${
