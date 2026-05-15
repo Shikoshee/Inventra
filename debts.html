@@ -415,8 +415,10 @@
 
     debts.forEach((d, index) => {
 
-      const status =
-        d.status || ((parseFloat(d.balance) || 0) > 0 ? "UNPAID" : "PAID");
+       const status =
+  d.status === "PAID"
+  ? "PAID"
+  : "UNPAID";
 
       const clearedDate = d.clearedDate || "-";
 
