@@ -379,7 +379,13 @@ function renderSales(data = allSales){
 
         <td>${sale.product}</td>
 
-        <td>${sale.customer || "-"}</td>
+        <td>
+  ${
+    sale.debtor?.trim()
+    || sale.customer?.trim()
+    || "Walk-in Customer"
+  }
+</td>
 
         <td>${sale.qty}</td>
 
