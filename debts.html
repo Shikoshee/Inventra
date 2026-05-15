@@ -449,23 +449,34 @@
             }
           </td>
 
-          <td>${clearedDate}</td>
-
           <td>
-            ${
-              status === "UNPAID"
-              ? `
-                <button
-                  class="btn-pay"
-                  onclick="markAsPaid(${index})"
-                >
-                  ✓ Mark Paid
-                </button>
-              `
-              : "-"
-            }
-          </td>
+  ${
+    d.clearedDate
+    ? new Date(d.clearedDate).toLocaleString()
+    : "-"
+  }
+</td>
 
+<td>
+
+  ${
+    (parseFloat(d.balance) || 0) > 0
+
+    ?
+
+    `<button
+      class="btn-pay"
+      onclick="markAsPaid(${index})">
+      Mark Paid
+    </button>`
+
+    :
+
+    "-"
+
+  }
+
+</td>
         </tr>
       `;
     });
@@ -479,65 +490,69 @@
   }
 
   // Mark debt as paid
-  function markAsPaid(index) {
+  function markAsPaid(index){
 
-    if (!confirm("Mark this debt as paid?")) return;
+  if(!confirm("Mark this debt as paid?")) return;
 
-    const now = new Date();
+  const searchValue =
+    document.getElementById("searchDebtor")
+    ?.value
+    .toLowerCase() || "";
 
-    const searchValue =
-      document.getElementById("searchDebtor")?.value.toLowerCase() || "";
+  const debts = allSales.filter(s => {
 
-    const debts = allSales.filter(s => {
+    const hasDebt =
+      (parseFloat(s.balance) || 0) > 0;
 
-      const hasDebt = (parseFloat(s.balance) || 0) > 0;
-      const debtorName = (s.debtor || "").toLowerCase();
+    const debtorName =
+      (s.debtor || "").toLowerCase();
 
-      return hasDebt && debtorName.includes(searchValue);
+    return hasDebt &&
+      debtorName.includes(searchValue);
 
-    });
+  });
 
-    const sale = debts[index];
+  const sale = debts[index];
 
-    if (!sale) return;
+  if(!sale) return;
 
-    const originalIndex = allSales.findIndex(s =>
+  const originalIndex = allSales.findIndex(s =>
 
-      s.product === sale.product &&
-      s.date === sale.date &&
-      s.debtor === sale.debtor
+    s.product === sale.product &&
+    s.date === sale.date &&
+    s.debtor === sale.debtor
 
-    );
+  );
 
-    if (originalIndex === -1) return;
+  if(originalIndex === -1) return;
 
-    const balancePaid =
-      parseFloat(allSales[originalIndex].balance) || 0;
+  // SAME LOGIC AS SALES REPORT
 
-    allSales[originalIndex].status = "PAID";
-    allSales[originalIndex].balance = 0;
-    allSales[originalIndex].clearedAmount = balancePaid;
+  allSales[originalIndex].status = "PAID";
 
-    allSales[originalIndex].amountPaid =
-      (parseFloat(allSales[originalIndex].amountPaid) || 0)
-      + balancePaid;
+  allSales[originalIndex].amountPaid =
+    (parseFloat(allSales[originalIndex].amountPaid) || 0)
+    +
+    (parseFloat(allSales[originalIndex].balance) || 0);
 
-    allSales[originalIndex].clearedDate =
-      now.toLocaleString();
+  allSales[originalIndex].balance = 0;
 
-    allSales[originalIndex].paidDate =
-      now.toISOString().split("T")[0];
+  // SAVE CLEARED DATE
+  allSales[originalIndex].clearedDate =
+    new Date().toISOString();
 
-    localStorage.setItem(
-      "allSales",
-      JSON.stringify(allSales)
-    );
+  localStorage.setItem(
+    "allSales",
+    JSON.stringify(allSales)
+  );
 
-    alert("✅ Debt cleared successfully!");
+  renderDebts();
 
-    renderDebts();
-    updateDebtTotals();
-  }
+  updateDebtTotals();
+
+  alert("✅ Debt cleared successfully!");
+
+}
 
   // Update summary
   function updateDebtTotals() {
